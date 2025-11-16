@@ -40,7 +40,10 @@ namespace NetSdrClientApp.Networking
 
             try
             {
+                // якщо вже існує попередній токен — звільняємо його перед створенням нового
+                _cts?.Dispose();
                 _cts = new CancellationTokenSource();
+
                 _tcpClient.Connect(_host, _port);
                 _stream = _tcpClient.GetStream();
                 Console.WriteLine($"Connected to {_host}:{_port}");
@@ -49,6 +52,7 @@ namespace NetSdrClientApp.Networking
             catch (Exception ex)
             {
                 Console.WriteLine($"Failed to connect: {ex.Message}");
+                _cts?.Dispose(); //  звільняємо ресурс у випадку помилки
             }
         }
 
@@ -118,10 +122,7 @@ namespace NetSdrClientApp.Networking
                         }
                     }
                 }
-                catch (OperationCanceledException ex)
-                {
-                    //empty
-                }
+                
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error in listening loop: {ex.Message}");
