@@ -1,4 +1,4 @@
-﻿﻿using NetSdrClientApp;
+﻿using NetSdrClientApp;
 using NetSdrClientApp.Networking;
 using System.Diagnostics.CodeAnalysis;
 

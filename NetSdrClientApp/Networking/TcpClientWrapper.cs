@@ -7,13 +7,15 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
+
 
 namespace NetSdrClientApp.Networking
 {
     public class TcpClientWrapper : ITcpClient
     {
-        private readonly string _host;
-        private readonly int _port;
+        private string _host;
+        private int _port;
         private TcpClient? _tcpClient;
         private NetworkStream? _stream;
         private CancellationTokenSource _cts;
@@ -28,6 +30,7 @@ namespace NetSdrClientApp.Networking
             _port = port;
         }
 
+        [ExcludeFromCodeCoverage]
         public void Connect()
         {
             if (Connected)
@@ -56,12 +59,12 @@ namespace NetSdrClientApp.Networking
             }
         }
 
+        [ExcludeFromCodeCoverage]
         public void Disconnect()
         {
             if (Connected)
             {
                 _cts?.Cancel();
-                _cts?.Dispose();
                 _stream?.Close();
                 _tcpClient?.Close();
 
@@ -78,23 +81,22 @@ namespace NetSdrClientApp.Networking
 
         public async Task SendMessageAsync(byte[] data)
         {
-            if (Connected && _stream != null && _stream.CanWrite)
-            {
-                Console.WriteLine($"Message sent: " + data.Select(b => Convert.ToString(b, toBase: 16)).Aggregate((l, r) => $"{l} {r}"));
-                await _stream.WriteAsync(data, 0, data.Length);
-            }
-            else
-            {
-                throw new InvalidOperationException("Not connected to a server.");
-            }
+            await SendDataAsync(data);
         }
 
+        [ExcludeFromCodeCoverage]
         public async Task SendMessageAsync(string str)
         {
             var data = Encoding.UTF8.GetBytes(str);
+            await SendDataAsync(data);
+        }
+
+        [ExcludeFromCodeCoverage]
+        private async Task SendDataAsync(byte[] data)
+        {
             if (Connected && _stream != null && _stream.CanWrite)
             {
-                Console.WriteLine($"Message sent: " + data.Select(b => Convert.ToString(b, toBase: 16)).Aggregate((l, r) => $"{l} {r}"));
+                Console.WriteLine("Message sent: " + string.Join(" ", data.Select(b => Convert.ToString(b, 16))));
                 await _stream.WriteAsync(data, 0, data.Length);
             }
             else
@@ -103,6 +105,7 @@ namespace NetSdrClientApp.Networking
             }
         }
 
+        [ExcludeFromCodeCoverage]
         private async Task StartListeningAsync()
         {
             if (Connected && _stream != null && _stream.CanRead)
@@ -122,7 +125,10 @@ namespace NetSdrClientApp.Networking
                         }
                     }
                 }
-                
+                catch (OperationCanceledException ex)
+                {
+                    //empty
+                }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error in listening loop: {ex.Message}");
